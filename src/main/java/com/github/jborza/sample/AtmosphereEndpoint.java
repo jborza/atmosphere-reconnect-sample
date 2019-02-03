@@ -13,6 +13,12 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import java.time.LocalTime;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import static org.atmosphere.cpr.ApplicationConfig.MAX_INACTIVE;
 
 @ManagedService(
@@ -22,6 +28,13 @@ import static org.atmosphere.cpr.ApplicationConfig.MAX_INACTIVE;
 public class AtmosphereEndpoint {
     private final Logger logger = LoggerFactory.getLogger(AtmosphereEndpoint.class);
     public final static String ENDPOINT_URL = "/atmo";
+
+    private ScheduledExecutorService executorService;
+
+    public AtmosphereEndpoint() {
+        executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleAtFixedRate(() -> broadcast("ping @ "+ LocalTime.now().toString()), 0, 1000, TimeUnit.MILLISECONDS);
+    }
 
     @Inject
     @Named(ENDPOINT_URL)
@@ -49,4 +62,5 @@ public class AtmosphereEndpoint {
         logger.info("Broadcasting {}", message);
         broadcaster.broadcast(message);
     }
+
 }

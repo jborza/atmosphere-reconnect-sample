@@ -63,7 +63,7 @@
             <version>${jetty.version}</version>
             <configuration>
                 <webAppSourceDirectory>${project.build.directory}/${project.name}</webAppSourceDirectory>
-                <scanIntervalSeconds>5</scanIntervalSeconds>
+                <scanIntervalSeconds>2</scanIntervalSeconds>
                 <webAppConfig>
                     <contextPath>/</contextPath>
                 </webAppConfig>
