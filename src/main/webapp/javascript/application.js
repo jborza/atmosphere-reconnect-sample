@@ -15,81 +15,95 @@ $(function () {
         logLevel: 'debug',
         transport: transport,
         fallbackTransport: fallbackTransport,
-        reconnectInterval: 1000
+        reconnectInterval: 100,
+        initialReconnectInterval: 100,
+        maxReconnectInterval: 5000
     };
+
+    request.increaseReconnectInterval = function () {
+        this.reconnectInterval *= 2;
+        this.reconnectInterval += Math.ceil(Math.random() * 50);
+        this.reconnectInterval = Math.min(this.reconnectInterval, this.maxReconnectInterval);
+        console.log("ATM: Increased reconnect interval to " + this.reconnectInterval + " ms");
+    }
+
+    request.resetReconnectInterval = function(){
+        this.reconnectInterval = this.initialReconnectInterval;
+    }
 
     request.onOpen = function (response) {
-        content.html($('<p>', {
-            text: 'Atmosphere connected using ' + response.transport
-        }));
-        transport = response.transport;
-
+        console.log("ATM connected using "+response.transport);
+        this.resetReconnectInterval();
+        
         // Carry the UUID. This is required if you want to call subscribe(request) again.
         request.uuid = response.request.uuid;
+        showStatus(response);
     };
 
-    request.onClientTimeout = function (r) {
-        content.html($('<p>', {
-            text: 'Client closed the connection after a timeout. Reconnecting in ' + request.reconnectInterval
-        }));
-        subSocket.push(JSON.stringify({
-            author: r.uuid,
-            message: 'is inactive and closed the connection. Will reconnect in ' + request.reconnectInterval
-        }));
+    request.onClientTimeout = function (request) {
+        console.log("ATM onClientTimeout, reconnecting in "+request.reconnectInterval);
+
+        var self = this;
         setTimeout(function () {
-            subSocket = socket.subscribe(request);
-        }, request.reconnectInterval);
+            subSocket = socket.subscribe(self);
+        }, this.reconnectInterval);
+        showStatus(request);
     };
 
     request.onReopen = function (response) {
-        content.html($('<p>', {
-            text: 'Atmosphere re-connected using ' + response.transport
-        }));
+        console.log("ATM onReopen re-connected using " + response.transport);
+        this.resetReconnectInterval();
+        showStatus(response);
     };
 
-    // For demonstration of how you can customize the fallbackTransport using the onTransportFailure function
     request.onTransportFailure = function (errorMsg, request) {
-        atmosphere.util.info(errorMsg);
-        request.fallbackTransport = "long-polling";
-
-        header.html($('<h3>', {
-            text: 'Transport failure'
-        }));
+        console.log(errorMsg);
+        request.fallbackTransport = "websocket";
+        showStatus(request);
     };
 
     request.onMessage = function (response) {
         var message = response.responseBody;
         addMessage(message, new Date(), 'black');
+        shift();
+        addPoint(message);
+        showStatus(response);
     };
 
     request.onClose = function (response) {
-        content.html($('<p>', {
-            text: 'Server closed the connection after a timeout'
-        }));
-        if (subSocket) {
-            subSocket.push(atmosphere.util.stringifyJSON({
-                message: 'disconnecting'
-            }));
-        }
+        console.log("ATM onClose - Server closed the connection ");
+        this.increaseReconnectInterval();
+        showStatus(response);
     };
 
     request.onError = function (response) {
-        content.html($('<p>', {
-            text: 'Sorry, but there\'s some problem with your ' +
-                'socket or the server is down'
-        }));
+        this.increaseReconnectInterval();
+        console.log("ATM onError");
+        var self = this;
+        setTimeout(function(){
+            subSocket = socket.subscribe(self);
+        }, this.reconnectInterval);
     };
 
     request.onReconnect = function (request, response) {
-        content.html($('<p>', {
-            text: 'Connection lost, trying to reconnect. Trying to reconnect ' + request.reconnectInterval
-        }));
+        this.increaseReconnectInterval();
+        console.log("ATM onReconnect in "+request.reconnectInterval);
+        showStatus(request);
     };
 
-    subSocket = socket.subscribe(request);
+    function log(message){
+        console.log(message);
+    }
 
     function addMessage(message, datetime, color) {
-        content.append('<p color='+color+'>[' + datetime.toLocaleTimeString() 
-            +'] : ' + message + '</p>');
+        content.append('<p color=' + color + '>[' + datetime.toLocaleTimeString()
+            + '] : ' + message + '</p>');
     }
+
+    function showStatus(obj){
+        var status = JSON.stringify(obj, undefined, 2);
+        $("#atmosphere_status").text(status);
+    }
+
+    subSocket = socket.subscribe(request);
 });

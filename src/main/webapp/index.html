@@ -9,23 +9,53 @@
     <!-- Application -->
     <script type="text/javascript" src="javascript/jquery-3.3.1.min.js"></script>
     <script type="text/javascript" src="javascript/application.js"></script>
+    <script type="text/javascript" src="javascript/plot.js"></script>
     <style>
-        p {line-height: 18px;}
-        div {width: 600px; margin-left: auto; margin-right: auto;}
-        #content {padding: 5px; background: #eee; border-radius: 5px; margin-top: 10px;}
+        p {
+            line-height: 18px;
+        }
+
+        div {
+            width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #content {
+            padding: 5px;
+            background: #eee;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
     </style>
+
 </head>
 
-<body>
+<body onload="create_initial_plot();">
     <div id="header">
         <h3>Atmosphere Reconnect demo</h3>
     </div>
-    <div><span>Transport:</span>
+    <div>
+        <span>Transport:</span>
         <span id="transport">N/A</span>
 
         <br />
         <span>Status:</span>
-        <span id="status">Connecting...</span></div>
+        <span id="status">Connecting...</span>
+    </div>
+    <div>
+        <canvas id="canvas" width="600" height="64">
+
+        </canvas>
+    </div>
+    <div>
+        <h3>Atmosphere status</h3>
+        <pre id="atmosphere_status"></pre>
+    </div>
     <div>
         <h3>Content:</h3>
         <div id="content">

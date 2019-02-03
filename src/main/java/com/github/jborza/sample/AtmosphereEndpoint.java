@@ -12,9 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import java.time.LocalTime;
-import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +22,7 @@ import static org.atmosphere.cpr.ApplicationConfig.MAX_INACTIVE;
         path = AtmosphereEndpoint.ENDPOINT_URL,
         atmosphereConfig = MAX_INACTIVE + "=10000"
 )
-public class AtmosphereEndpoint {
+public class AtmosphereEndpoint implements Broadcastable {
     private final Logger logger = LoggerFactory.getLogger(AtmosphereEndpoint.class);
     public final static String ENDPOINT_URL = "/atmo";
 
@@ -33,7 +30,7 @@ public class AtmosphereEndpoint {
 
     public AtmosphereEndpoint() {
         executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleAtFixedRate(() -> broadcast("ping @ "+ LocalTime.now().toString()), 0, 1000, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(new TickerJob(this), 0, 500, TimeUnit.MILLISECONDS);
     }
 
     @Inject
@@ -56,6 +53,7 @@ public class AtmosphereEndpoint {
         logger.info("Heartbeat sent by {}", event.getResource().uuid());
     }
 
+    @Override
     public void broadcast(String message) {
         if (broadcaster == null)
             return;
